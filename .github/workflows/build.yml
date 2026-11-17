@@ -1,0 +1,45 @@
+name: Build IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.4.1.app
+          xcodebuild -version
+      - name: Find project
+        run: |
+          find . -name "*.xcodeproj" -o -name "*.xcworkspace"
+      - name: Build
+        run: |
+          xcodebuild \
+            -project DuoLikeAnimation.xcodeproj \
+            -scheme DuoLikeAnimation \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/DuoLikeAnimation.app Payload/
+          /usr/bin/zip -r DuoLikeAnimation.ipa Payload
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: DuoLikeAnimation-IPA
+          path: DuoLikeAnimation.ipa
+          retention-days: 30
